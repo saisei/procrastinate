@@ -1,4 +1,6 @@
 from pymongo import Connection
+
+import base64
 import sys
 
 TIME = []
@@ -12,7 +14,7 @@ for x in range(9,19):
 INITIAL_TIME_STATE = ['CLOSED'] * 20
 INITIAL_SCHEDULE=dict(zip(TIME, INITIAL_TIME_STATE))
 
-BUSINESS = [(1, 'Hair Studio 919'), (2, 'Mike\'s Auto Shop')]
+BUSINESS = [(1, 'Hair Studio 919', 'styling919'), (2, 'Mike\'s Auto Shop', 'mikeshop')]
 SCHEDULE = {1: INITIAL_SCHEDULE, 
             2: INITIAL_SCHEDULE
            }
@@ -23,9 +25,10 @@ if __name__ == "__main__":
 	
     # Create business w/ schedules
 	collection = db['business']
+	collection.ensure_index('username', unique=True)
     
     # Build document
-	for id, name in BUSINESS:
+	for id, name, username in BUSINESS:
 		schedule = SCHEDULE[id]
 		if id == 2: # for business #2, open up two appointments
 			schedule['09:00'] = "OPEN"
@@ -35,6 +38,8 @@ if __name__ == "__main__":
 
 		doc = ({"id": id, 
                 "name": name,
-                "schedule": schedule
+                "schedule": schedule,
+				"username": username,
+				"password": base64.b64encode("password")
               })
 		collection.insert(doc)
