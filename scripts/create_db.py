@@ -60,13 +60,15 @@ if __name__ == "__main__":
 	for id, name, username in BUSINESSES:
 		doc = ({"id": id, 
                 "username": username,
-                "password": base64.b64encode("password")
+                "password": base64.b64encode("password"),
+                "type": "business"
               })
 		collection.insert(doc)
 	for id, name, username in CLIENTS:
 		doc = ({"id": id, 
                 "username": username,
-                "password": base64.b64encode(username)
+                "password": base64.b64encode(username),
+                "type": "client"
               })
 		collection.insert(doc)
 
@@ -77,9 +79,10 @@ if __name__ == "__main__":
     # Build document
 	for id, name, username in BUSINESSES:
 		schedule = SCHEDULE[id]
-		print id, schedule
 
 		doc = ({"id": id, 
                 "schedule": schedule
               })
 		collection.insert(doc)
+
+	print "Database initialization complete."
