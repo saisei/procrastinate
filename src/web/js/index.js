@@ -44,19 +44,19 @@ function get_schedule(id, element, showOpenOnly) {
 			}
 		}
 		var table = this;
-		this.ref = $("<table></table>"); 
-		table.ref.append("<tr><th>Time</th><th>State</th><th></th></tr>"); // Insert table header
+		this.ref = $("<table class='table-bordered table-hover'></table>"); 
+		table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>State</b></th><th></th></tr>"); // Insert table header
 		$.each(timeslot.sort(), function(index, key) {
 			if (showOpenOnly == true) {
 				if (schedule[key] == "OPEN" ) {
-					var time = "<td>" + key + "</td>";
-					var state = "<td>" + schedule[key] + "</td>";
+					var time = "<td class='col-md-8'>" + key + "</td>";
+					var state = "<td class='col-md-4'>" + schedule[key] + "</td>";
 					var row = "<tr>" + time + state + "</tr>";
 					table.ref.append(row);
 				}
 			} else {
-				var time = "<td>" + key + "</td>";
-				var state = "<td>" + schedule[key] + "</td>";
+				var time = "<td class='col-md-8'>" + key + "</td>";
+				var state = "<td class='col-md-4'>" + schedule[key] + "</td>";
 				// don't need it right now: var cancel_btn = 
 				var row = "<tr>" + time + state + "</tr>";
 				//$("#schedule_table").append(row);
@@ -75,7 +75,7 @@ function get_schedule(id, element, showOpenOnly) {
 }
 
 function load_header_pane(data) {
-	var header = "<p>Welcome " + data.name + "!</p>";
+	var header = "<h3>Welcome <strong>" + data.name + "!</strong></h3>";
 	$("#top_pane").append(header);
 	$("#top_pane").show();
 }

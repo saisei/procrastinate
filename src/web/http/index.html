@@ -3,18 +3,22 @@
 		<title>Procrastinate - Simply Your Life</title> 
 		<script src="http://code.jquery.com/jquery-2.1.0.js"></script>
 		<script src="../js/index.js"></script>
+		<script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 	</head>
 	<body>
-		<div id="login_pane">
-			<p>Username:</p><input type="text" name="username" id="username"><br>
-			<p>Password:</p><input type="password" name="password" id="password"><br>
-			<a id="login">Submit</a>
-		</div>
-		<div id="top_pane">
-		</div>
-		<div id="main_pane">
-			<div id="control_subpane"></div>
-			<div id="data_subpane"></div>
+		<div class="container-fluid">
+			<div id="login_pane">
+				<p>Username:</p><input type="text" name="username" id="username"><br>
+				<p>Password:</p><input type="password" name="password" id="password"><br>
+				<button type='button' class='btn btn-primary btn-lg' id="login">Submit</button>
+			</div>
+			<div class="page-header" id="top_pane">
+			</div>
+			<div id="main_pane">
+				<div id="control_subpane"></div>
+				<div id="data_subpane"></div>
+			</div>
 		</div>
 	</body>
 </html>
