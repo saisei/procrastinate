@@ -1,5 +1,33 @@
 function load_business_main_pane(data) {
 	var id = data.id;
+	get_schedule(id, $("#data_subpane"), false);
+	$("#main_pane").show();
+}
+
+function load_client_main_pane(data) {
+	$("#control_subpane").append("<p>What service would you like?</p>");
+	var select = $('<select></select>');
+	select.append("<option>Select</option>");
+	$.ajax({
+		type: "GET",
+		url: "http://localhost:5000/api/v1.0/business",
+		mimeType: "application/json"
+	}).done(function(data) {
+		// Populate data
+		$.each(data, function(index, biz) {
+			var opt = $("<option>" + biz.name + "</option>");
+			opt.attr('biz_id', biz.id);
+			select.append(opt);
+		});
+	});
+	select.change(function() {
+		get_schedule($(this).find(":selected").attr('biz_id'), $("#data_subpane"), true);
+	})
+	$("#control_subpane").append(select);
+	$("#main_pane").show();
+}
+
+function get_schedule(id, element, showOpenOnly) {
 	$.ajax({
 		type: "GET",
 		url: "http://localhost:5000/api/v1.0/schedule",
@@ -15,20 +43,35 @@ function load_business_main_pane(data) {
 				timeslot.push(key);
 			}
 		}
-		$("#main_pane").append("<table id='schedule_table'></table>"); // Insert table element
-		$("#schedule_table").append("<tr><th>Time</th><th>State</th><th></th></tr>"); // Insert table header
+		var table = this;
+		this.ref = $("<table></table>"); 
+		table.ref.append("<tr><th>Time</th><th>State</th><th></th></tr>"); // Insert table header
 		$.each(timeslot.sort(), function(index, key) {
-			var time = "<td>" + key + "</td>";
-			var state = "<td>" + schedule[key] + "</td>";
-			// don't need it right now: var cancel_btn = 
-			var row = "<tr>" + time + state + "</tr>";
-			$("#schedule_table").append(row);
+			if (showOpenOnly == true) {
+				if (schedule[key] == "OPEN" ) {
+					var time = "<td>" + key + "</td>";
+					var state = "<td>" + schedule[key] + "</td>";
+					var row = "<tr>" + time + state + "</tr>";
+					table.ref.append(row);
+				}
+			} else {
+				var time = "<td>" + key + "</td>";
+				var state = "<td>" + schedule[key] + "</td>";
+				// don't need it right now: var cancel_btn = 
+				var row = "<tr>" + time + state + "</tr>";
+				//$("#schedule_table").append(row);
+				table.ref.append(row);
+			}
 		});
+		// Post processing
+		element.empty(); // Clean out old data efore inserting new data.
+		if (table.ref.find("tr").length == 1) {
+			// No data found
+			element.append("<p>Sorry, no available appointments found.</p>");
+		} else {
+			element.append(table.ref);
+		}
 	});
-}
-
-function load_client_main_pane(data) {
-	// Stub
 }
 
 function load_header_pane(data) {

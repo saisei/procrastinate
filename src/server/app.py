@@ -35,6 +35,12 @@ def login():
 	rtn['type'] = user['type'] # Add this back on so UI knows which pane to paint
 	return json.dumps(rtn), 200
 
+@app.route('/api/v1.0/business', methods = ['GET'])
+def get_business():
+	collection = db['business'];
+	business = list(collection.find({}, {"_id":0}))
+	return json.dumps(business), 200
+
 @app.route('/api/v1.0/schedule', methods = ['GET'])
 def get_schedule():
 	if not request.args or not 'id' in request.args:
