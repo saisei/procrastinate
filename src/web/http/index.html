@@ -9,14 +9,23 @@
 	<body>
 		<div class="container-fluid">
 			<div id="login_pane">
-				<p>Username:</p><input type="text" name="username" id="username"><br>
-				<p>Password:</p><input type="password" name="password" id="password"><br>
-				<button type='button' class='btn btn-primary btn-lg' id="login">Submit</button>
+				<form role="form">
+					<div class="form-group">
+						<label for="username">Username</label>
+						<input class="form-control" type="text" id="username" placeholder="Username">
+					</div>
+					<div class="form-group">
+						<label for"password">Password</label>
+						<input class="form-control" type="password" id="password" placeholder="Password">
+					</div>
+					<button type='button' class='btn btn-default' id="login">Sign In</button>
+				</form>
 			</div>
 			<div class="page-header" id="top_pane">
 			</div>
-			<div id="main_pane">
+			<div class="row" id="main_pane">
 				<div id="control_subpane"></div>
+				<br>
 				<div id="data_subpane"></div>
 			</div>
 		</div>

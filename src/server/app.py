@@ -61,11 +61,66 @@ def get_schedule():
 		abort(400)
 	return json.dumps(schedule), 200
 
-@app.route('/api/v1.0/business', methods = ['GET'])
-def get_biz():
-	collection = db['business']
-	documents = list(collection.find({}, {"_id": 0}))
-	return json.dumps(documents)
+@app.route('/api/v1.0/register_apt', methods = ['POST'])
+def register_apt():
+	if not request.form or not 'id' in request.form or not 'user' in request.form or not 'timeslot' in request.form:
+		abort(400)
+	collection = db['business_schedule_queue']
+	try:
+		doc = ({"id": int(request.form['id']),
+				"user_id": int(request.form['user']),
+				"timeslot": request.form['timeslot']
+		})
+		collection.insert(doc)
+	except Exception as e:
+		print "Unknown exception:", e
+		abort(400)
+	return json.dumps([]), 202
+
+@app.route('/api/v1.0/business_queue', methods = ['GET'])
+def get_business_queue():
+	if not request.args or not 'id' in request.args:
+		abort(400)
+
+	try:
+		collection = db['business_schedule_queue']
+		queue_items = list(collection.find({"id": int(request.args['id'])}, {"_id": 0}))
+		# Also lookup names of the items
+		collection = db['clients']
+		for item in queue_items:
+			user_id = item['user_id']
+			name = list(collection.find({"id": user_id}, {"_id": 0, "id": 0})).pop()['name']
+			item['username'] = name
+	except IndexError:
+		# WTF? How can this happen?
+		print "Cannot find entry in database with id: %s." % request.args['id']
+		abort(400) 
+	except ValueError:
+		print "Converting request field to int failed."
+		abort(400)
+	except Exception as e:
+		print "Unknown exception:", e
+		abort(400)
+	return json.dumps(queue_items), 200
+
+@app.route('/api/v1.0/set_apt', methods = ['POST'])
+def set_apt():
+	if not request.form or not 'id' in request.form or not 'user' in request.form or not 'timeslot' in request.form:
+		abort(400)
+	try:
+		collection = db['schedule']
+		doc = list(collection.find({"id": int(request.form['id'])}, {"_id": 0, "id": 0})).pop()
+		schedule = doc['schedule']
+		schedule[request.form['timeslot']] = "CLOSED"
+		collection.update({"id": int(request.form['id'])}, {"id": int(request.form['id']), "schedule": schedule}) # this is shitty, there's got to be a way to update the doc without having to set id field again
+
+		# cleanup queue
+		collection = db['business_schedule_queue']
+		collection.remove({"id": int(request.form['id']), "timeslot": request.form['timeslot']})
+	except Exception as e:
+		print "Unknown exception:", e
+		abort(400)
+	return json.dumps([]), 201
 
 @app.after_request
 def after_request(response):
