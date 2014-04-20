@@ -122,6 +122,21 @@ def set_apt():
 		abort(400)
 	return json.dumps([]), 201
 
+@app.route('/api/v1.0/cancel_apt', methods = ['POST'])
+def cancel_apt():
+	if not request.form or not 'id' in request.form or not 'timeslot' in request.form:
+		abort(400)
+	try:
+		collection = db['schedule']
+		doc = list(collection.find({"id": int(request.form['id'])}, {"_id": 0, "id": 0})).pop()
+		schedule = doc['schedule']
+		schedule[request.form['timeslot']] = "OPEN"
+		collection.update({"id": int(request.form['id'])}, {"id": int(request.form['id']), "schedule": schedule}) # this is shitty, there's got to be a way to update the doc without having to set id field again
+	except Exception as e:
+		print "Unknown exception:", e
+		abort(400)
+	return json.dumps([]), 201
+
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')

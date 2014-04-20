@@ -56,7 +56,7 @@ function get_schedule(id, element, showOpenOnly) {
 		table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>State</b></th><th></th></tr>"); // Insert table header
 		$.each(timeslot.sort(), function(index, key) {
 			if (showOpenOnly == true) {
-				if (schedule[key] == "OPEN" ) {
+				if (schedule[key] == "OPEN" ) { // For clients
 					var time = $("<td class='col-md-4'>" + key + "</td>");
 					var state = $("<td class='col-md-4'>" + schedule[key] + "</td>");
 					var reserve_col = $("<td class='col-md-4'></td>");
@@ -75,11 +75,25 @@ function get_schedule(id, element, showOpenOnly) {
 					row.append(reserve_col);
 					table.ref.append(row);
 				}
-			} else {
+			} else { // For business
 				var time = "<td class='col-md-8'>" + key + "</td>";
 				var state = "<td class='col-md-4'>" + schedule[key] + "</td>";
-				// don't need it right now: var cancel_btn = 
-				var row = "<tr>" + time + state + "</tr>";
+				var cancel_col = $("<td class='col-md-4'></td>");
+				var cancel_btn = $("<button class='btn btn-danger btn-block'>Cancel</button>");
+				cancel_btn.click(function() {
+					cancel_apt(id, key, $(this));
+					load_business_main_pane(id);
+				});
+				cancel_col.append(cancel_btn);
+
+				if (schedule[key] == "OPEN") {
+					cancel_btn.attr('disabled', "disabled");
+				}
+
+				var row = $("<tr></tr>");
+				row.append(time);
+				row.append(state);
+				row.append(cancel_col);
 				table.ref.append(row);
 			}
 		});
@@ -119,6 +133,21 @@ function set_apt(id, user_id, timeslot, caller) {
 	}).done(function(data) {
 		caller.removeClass('btn-primary');
 		caller.addClass('btn-success');
+		caller.attr('disabled', "disabled");
+		caller.text("Done");
+	});
+}
+
+function cancel_apt(id, timeslot, caller) {
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:5000/api/v1.0/cancel_apt",
+		mimeType: "application/json",
+		data: {id: id, timeslot: timeslot},
+		dataType: "json"
+	}).done(function(data) {
+		caller.removeClass('btn-danger');
+		caller.addClass('btn-danger');
 		caller.attr('disabled', "disabled");
 		caller.text("Done");
 	});
