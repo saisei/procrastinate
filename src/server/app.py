@@ -77,6 +77,28 @@ def register_apt():
 		abort(400)
 	return json.dumps([]), 202
 
+@app.route('/api/v1.0/waitlist', methods = ['POST'])
+def waitlist():
+	if not request.form or not 'id' in request.form or not 'user' in request.form or not 'state' in request.form:
+		abort(400)
+	collection = db['client_schedule_queue']
+	try:
+		doc = ({"id": int(request.form['id']),
+				"user_id": int(request.form['user']),
+				"state": request.form['state']
+		})
+		if len(list(collection.find({"id": int(request.form['id']), "user_id": int(request.form['user'])}))) > 0:
+			# update
+			collection.update({"id": int(request.form['id']), "user_id": int(request.form['user'])}, {"id": int(request.form['id']), "user_id": int(request.form['user']), "state": request.form['state']}, upsert=False)
+			conn.fsync()
+		else:
+			#create
+			collection.insert(doc)
+	except Exception as e:
+		print "Unknown exception:", e
+		abort(400)
+	return json.dumps([]), 202
+
 @app.route('/api/v1.0/business_queue', methods = ['GET'])
 def get_business_queue():
 	if not request.args or not 'id' in request.args:
@@ -103,15 +125,46 @@ def get_business_queue():
 		abort(400)
 	return json.dumps(queue_items), 200
 
+@app.route('/api/v1.0/client_queue', methods = ['GET'])
+def get_client_queue():
+	if not request.args or not 'id' in request.args:
+		abort(400)
+
+	try:
+		collection = db['client_schedule_queue']
+		queue_items = list(collection.find({"id": int(request.args['id'])}, {"_id": 0}))
+		# Also lookup names of the items
+		collection = db['clients']
+		for item in queue_items:
+			print item
+			user_id = item['user_id']
+			name = list(collection.find({"id": user_id}, {"_id": 0, "id": 0})).pop()['name']
+			item['username'] = name
+	except IndexError:
+		# WTF? How can this happen?
+		print "Cannot find entry in database with id: %s." % request.args['id']
+		abort(400) 
+	except ValueError:
+		print "Converting request field to int failed."
+		abort(400)
+	except Exception as e:
+		print "Unknown exception:", e
+		abort(400)
+	return json.dumps(queue_items), 200
+
 @app.route('/api/v1.0/set_apt', methods = ['POST'])
 def set_apt():
 	if not request.form or not 'id' in request.form or not 'user' in request.form or not 'timeslot' in request.form:
 		abort(400)
 	try:
+		collection = db['clients']
+		username = list(collection.find({"id": int(request.form['user'])}, {"_id": 0, "id": 0})).pop()['name']
+
 		collection = db['schedule']
 		doc = list(collection.find({"id": int(request.form['id'])}, {"_id": 0, "id": 0})).pop()
 		schedule = doc['schedule']
-		schedule[request.form['timeslot']] = "CLOSED"
+		schedule[request.form['timeslot']][0] = username
+		schedule[request.form['timeslot']][1] = "CLOSED"
 		collection.update({"id": int(request.form['id'])}, {"id": int(request.form['id']), "schedule": schedule}) # this is shitty, there's got to be a way to update the doc without having to set id field again
 
 		# cleanup queue
@@ -130,7 +183,8 @@ def cancel_apt():
 		collection = db['schedule']
 		doc = list(collection.find({"id": int(request.form['id'])}, {"_id": 0, "id": 0})).pop()
 		schedule = doc['schedule']
-		schedule[request.form['timeslot']] = "OPEN"
+		schedule[request.form['timeslot']][0] = ""
+		schedule[request.form['timeslot']][1] = "OPEN"
 		collection.update({"id": int(request.form['id'])}, {"id": int(request.form['id']), "schedule": schedule}) # this is shitty, there's got to be a way to update the doc without having to set id field again
 	except Exception as e:
 		print "Unknown exception:", e

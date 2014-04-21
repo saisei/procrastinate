@@ -1,9 +1,14 @@
 from pymongo import Connection
+from random import randrange
 
 import base64
 import copy
 import sys
 
+BUSINESSES = [(1, 'Hair Studio 919', 'styling919'), (2, 'Mike\'s Auto Shop', 'mikeshop')]
+CLIENTS = [(1, 'Alex', 'alex'), (2, 'Dave', 'dave'), (3, 'Jay', 'jay'), (4, 'Jenna', 'jenna'), (5, 'Leif', 'leif'), (6, 'Matt', 'matt')]
+
+NAME=[]
 TIME = []
 for x in range(9,19):
     for y in ['00', '30']:
@@ -11,20 +16,21 @@ for x in range(9,19):
 			TIME.append('0%s:%s' % (x,y))
         else:
             TIME.append('%s:%s' % (x,y))
+    	NAME.append(CLIENTS[randrange(1,6)][1])
+
 
 INITIAL_TIME_STATE = ['CLOSED'] * 20
-INITIAL_SCHEDULE=dict(zip(TIME, INITIAL_TIME_STATE))
+STATE = zip(NAME, INITIAL_TIME_STATE)
+INITIAL_SCHEDULE=dict(zip(TIME, STATE))
 
-BUSINESSES = [(1, 'Hair Studio 919', 'styling919'), (2, 'Mike\'s Auto Shop', 'mikeshop')]
-CLIENTS = [(1, 'Alex', 'alex'), (2, 'Dave', 'dave'), (3, 'Jay', 'jay'), (4, 'Jenna', 'jenna'), (5, 'Leif', 'leif'), (6, 'Matt', 'matt')]
 SCHEDULE = {1: copy.deepcopy(INITIAL_SCHEDULE), 
             2: copy.deepcopy(INITIAL_SCHEDULE)
            }
 
 # Hardcode schedule opening for business #1
-SCHEDULE[1]['09:00'] = "OPEN"
-SCHEDULE[1]['11:30'] = "OPEN"
-SCHEDULE[1]['16:30'] = "OPEN"
+SCHEDULE[1]['09:00'] = ["", "OPEN"]
+SCHEDULE[1]['11:30'] = ["", "OPEN"]
+SCHEDULE[1]['16:30'] = ["", "OPEN"]
 
 if __name__ == "__main__":
 	conn = Connection()

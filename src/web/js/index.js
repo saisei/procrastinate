@@ -1,7 +1,6 @@
 function load_business_main_pane(id) {
-	//var id = data.id;
-	get_schedule(id, $("#data_subpane"), false);
 	get_business_queue(id, $("#control_subpane"));
+	get_schedule(id, $("#data_subpane"), false);
 	$("#main_pane").show();
 }
 
@@ -56,9 +55,10 @@ function get_schedule(id, element, showOpenOnly) {
 		table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>State</b></th><th></th></tr>"); // Insert table header
 		$.each(timeslot.sort(), function(index, key) {
 			if (showOpenOnly == true) {
-				if (schedule[key] == "OPEN" ) { // For clients
+				if (schedule[key][1] == "OPEN" ) { // For clients
 					var time = $("<td class='col-md-4'>" + key + "</td>");
-					var state = $("<td class='col-md-4'>" + schedule[key] + "</td>");
+					var name = $("<td class='col-md-4'>" + schedule[key][0] + "</td>");
+					var state = $("<td class='col-md-4'>" + schedule[key][1] + "</td>");
 					var reserve_col = $("<td class='col-md-4'></td>");
 					var reserve_btn = $("<button class='btn btn-primary btn-block'>Reserve</button>");
 					reserve_btn.click(function() {
@@ -76,22 +76,25 @@ function get_schedule(id, element, showOpenOnly) {
 					table.ref.append(row);
 				}
 			} else { // For business
-				var time = "<td class='col-md-8'>" + key + "</td>";
-				var state = "<td class='col-md-4'>" + schedule[key] + "</td>";
+				var time = $("<td class='col-md-8'>" + key + "</td>");
+				var name = $("<td class='col-md-4'>" + schedule[key][0] + "</td>");
+				var state = $("<td class='col-md-4'>" + schedule[key][1] + "</td>");
 				var cancel_col = $("<td class='col-md-4'></td>");
 				var cancel_btn = $("<button class='btn btn-danger btn-block'>Cancel</button>");
 				cancel_btn.click(function() {
 					cancel_apt(id, key, $(this));
-					load_business_main_pane(id);
+					//load_business_main_pane(id);
+					get_schedule(id, $("#data_subpane"), false);
 				});
 				cancel_col.append(cancel_btn);
 
-				if (schedule[key] == "OPEN") {
+				if (schedule[key][1] == "OPEN") {
 					cancel_btn.attr('disabled', "disabled");
 				}
 
 				var row = $("<tr></tr>");
 				row.append(time);
+				row.append(name);
 				row.append(state);
 				row.append(cancel_col);
 				table.ref.append(row);
@@ -102,6 +105,13 @@ function get_schedule(id, element, showOpenOnly) {
 		if (table.ref.find("tr").length == 1) {
 			// No data found
 			element.append("<p>Sorry, no available appointments found.</p>");
+			element.append("<br>");
+			element.append("<p>Be on the waiting list?</p>");
+			var waitlist_btn = $("<button class='btn btn-primary'>Waitlist</button>");
+			waitlist_btn.click(function() {
+				waitlist($("#top_pane").find("h3").attr("id"), id, "waiting", $(this));
+			});
+			element.append(waitlist_btn);
 		} else {
 			element.append(table.ref);
 		}
@@ -150,10 +160,67 @@ function cancel_apt(id, timeslot, caller) {
 		caller.addClass('btn-danger');
 		caller.attr('disabled', "disabled");
 		caller.text("Done");
+
+		// Gather user id list
+		var user_id = [];
+		$("#control_subpane").find(".queue_btn").each(function (index, btn) {
+			var user_id = $(btn).attr("user_id");
+			var business_id = id;
+			var state = timeslot;
+			waitlist(user_id, business_id, state, $(btn));
+			$(btn).removeAttr("disabled");
+			$(btn).text(state);
+		});
 	});
 }
 
 function get_business_queue(id, element) {
+	var table = this;
+	this.ref = $("<table class='table-bordered table-hover'></table>"); 
+	table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>Name</b></th><th></th></tr>"); // Insert table header
+	
+	$.ajax({
+		type: "GET",
+		url: "http://localhost:5000/api/v1.0/client_queue",
+		mimeType: "application/json",
+		data: {id: id},
+		dataType: "json"
+	}).done(function(data) {
+		$.each(data, function(index, item) {
+			var time = $("<td class='col-md-4'>Anytime</td>");
+			var name = $("<td class='col-md-4'>" + item.username + "</td>");
+			var accept_col = $("<td class='col-md-4'></td>");
+			var accept_btn;
+			
+			if (item.state == "waiting") {
+				accept_btn = $("<button class='btn btn-primary btn-block queue_btn'>Waiting for Availability</button>");
+				accept_btn.attr("disabled", "disabled"); // initially disable the button because there's no availibility
+			} else if (item.state == "complete") {
+				return true; // skip to next iteration
+			} else {
+				accept_btn = $("<button class='btn btn-primary btn-block queue_btn'>" + item.state + "</button>");
+			}
+
+			accept_btn.attr("user_id", item.user_id);
+			accept_btn.click(function() {
+				var timeslot = $(this).text(); // save this for the 2nd call
+				waitlist(item.user_id, $("#top_pane").find("h3").attr("id"), "complete", $(this));
+				set_apt($("#top_pane").find("h3").attr("id"), item.user_id, timeslot, $(this));
+				// Add some animations?
+				load_business_main_pane($("#top_pane").find("h3").attr("id"));
+			});
+			accept_col.append(accept_btn);
+
+			var row = $("<tr></tr>");
+			row.append(time);
+			row.append(name);
+			row.append(accept_col);
+			table.ref.append(row);
+		})
+		// Post processing
+		element.empty(); // Clean out old data efore inserting new data.
+	});
+
 	$.ajax({
 		type: "GET",
 		url: "http://localhost:5000/api/v1.0/business_queue",
@@ -161,11 +228,7 @@ function get_business_queue(id, element) {
 		data: {id: id},
 		dataType: "json"
 	}).done(function(data) {
-		var table = this;
-		this.ref = $("<table class='table-bordered table-hover'></table>"); 
-		table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>Name</b></th><th></th></tr>"); // Insert table header
 		$.each(data, function(index, item) {
-			//console.log(item.user_id + " - " + item.timeslot);
 			var time = $("<td class='col-md-4'>" + item.timeslot + "</td>");
 			var name = $("<td class='col-md-4'>" + item.username + "</td>");
 			var accept_col = $("<td class='col-md-4'></td>");
@@ -184,13 +247,28 @@ function get_business_queue(id, element) {
 			table.ref.append(row);
 		})
 		// Post processing
-		element.empty(); // Clean out old data efore inserting new data.
 		if (table.ref.find("tr").length == 1) {
 			// No data found
 			element.append("<p>No outstanding appointments requests found.</p>");
 		} else {
 			element.append(table.ref);
 		}
+	});
+}
+
+function waitlist(user_id, business_id, state, caller) {
+	$.ajax({
+		async: false,
+		type: "POST",
+		url: "http://localhost:5000/api/v1.0/waitlist",
+		mimeType: "application/json",
+		data: {id: business_id, user: user_id, state: state},
+		dataType: "json"
+	}).done(function(data) {
+		caller.removeClass('btn-primary');
+		caller.addClass('btn-success');
+		caller.attr('disabled', "disabled");
+		caller.text("Done");
 	});
 }
 
