@@ -1,3 +1,28 @@
+function setCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function getCookie(name) {
+	var nameEQ = name + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0;i < ca.length;i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1,c.length);
+		if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+	}
+	return null;
+}
+
+function eraseCookie(name) {
+	createCookie(name,"",-1);
+}
+
 function load_business_main_pane(id) {
 	get_business_queue(id, $("#control_subpane"));
 	get_schedule(id, $("#data_subpane"), false);
@@ -28,10 +53,9 @@ function load_client_main_pane(data) {
 }
 
 function load_header_pane(data) {
-	var header = $("<h3>Welcome <strong>" + data.name + "!</strong></h3>");
-	header.attr('id', data.id); // TODO: In the future put this info in a cookie. 
-	$("#top_pane").append(header);
-	$("#top_pane").show();
+	var header = $("<strong>Welcome " + data.name + "</strong>");
+	$("#welcome_text").append(header);
+	setCookie("uid", data.id, 1);
 }
 
 function get_schedule(id, element, showOpenOnly) {
@@ -62,7 +86,8 @@ function get_schedule(id, element, showOpenOnly) {
 					var reserve_col = $("<td class='col-md-4'></td>");
 					var reserve_btn = $("<button class='btn btn-primary btn-block'>Reserve</button>");
 					reserve_btn.click(function() {
-						var user_id = $("#top_pane").find("h3").attr("id"); // TODO: In the future, fetch from cookie.
+						var user_id = getCookie("uid"); // TODO: In the future, fetch from cookie.
+						console.log(user_id);
 						var business_id = id;
 						var timeslot = key;
 						register_apt(user_id, business_id, timeslot, $(this));
@@ -109,7 +134,7 @@ function get_schedule(id, element, showOpenOnly) {
 			element.append("<p>Be on the waiting list?</p>");
 			var waitlist_btn = $("<button class='btn btn-primary'>Waitlist</button>");
 			waitlist_btn.click(function() {
-				waitlist($("#top_pane").find("h3").attr("id"), id, "waiting", $(this));
+				waitlist(getCookie("uid"), id, "waiting", $(this));
 			});
 			element.append(waitlist_btn);
 		} else {
@@ -204,10 +229,10 @@ function get_business_queue(id, element) {
 			accept_btn.attr("user_id", item.user_id);
 			accept_btn.click(function() {
 				var timeslot = $(this).text(); // save this for the 2nd call
-				waitlist(item.user_id, $("#top_pane").find("h3").attr("id"), "complete", $(this));
-				set_apt($("#top_pane").find("h3").attr("id"), item.user_id, timeslot, $(this));
+				waitlist(item.user_id, getCookie("uid"), "complete", $(this));
+				set_apt(getCookie("uid"), item.user_id, timeslot, $(this));
 				// Add some animations?
-				load_business_main_pane($("#top_pane").find("h3").attr("id"));
+				load_business_main_pane(getCookie("uid"));
 			});
 			accept_col.append(accept_btn);
 
@@ -234,9 +259,9 @@ function get_business_queue(id, element) {
 			var accept_col = $("<td class='col-md-4'></td>");
 			var accept_btn = $("<button class='btn btn-primary btn-block'>Accept</button>");
 			accept_btn.click(function() {
-				set_apt($("#top_pane").find("h3").attr("id"), item.user_id, item.timeslot, $(this));
+				set_apt(getCookie("uid"), item.user_id, item.timeslot, $(this));
 				// Add some animations?
-				load_business_main_pane($("#top_pane").find("h3").attr("id"));
+				load_business_main_pane(getCookie("uid"));
 			});
 			accept_col.append(accept_btn);
 
