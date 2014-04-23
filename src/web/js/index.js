@@ -75,8 +75,8 @@ function get_schedule(id, element, showOpenOnly) {
 			}
 		}
 		var table = this;
-		this.ref = $("<table class='table-bordered table-hover'></table>"); 
-		table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>State</b></th><th></th></tr>"); // Insert table header
+		this.ref = $("<table class='table table-striped'></table>"); 
+		table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>Name</b></th><th class='col-md-4'><b>State</b></th><th></th></tr>"); // Insert table header
 		$.each(timeslot.sort(), function(index, key) {
 			if (showOpenOnly == true) {
 				if (schedule[key][1] == "OPEN" ) { // For clients
@@ -201,7 +201,7 @@ function cancel_apt(id, timeslot, caller) {
 
 function get_business_queue(id, element) {
 	var table = this;
-	this.ref = $("<table class='table-bordered table-hover'></table>"); 
+	this.ref = $("<table class='table table-striped'></table>"); 
 	table.ref.append("<tr><th class='col-md-8'><b>Time</b></th><th class='col-md-4'><b>Name</b></th><th></th></tr>"); // Insert table header
 	
 	$.ajax({
